@@ -1,0 +1,74 @@
+@echo off
+
+:: Set Parameters as needed
+:: 
+SET PATH_PGADMIM="C:\Program Files (x86)\pgAdmin III\1.20"
+SET SERVER=hit-gianluca
+SET DB_LIST=dbmmeta700,dbmmeta830,hitsw,gl051
+SET BACKUP_FOLDER="G:\Products\PostgreSQL\hit-gianluca\backups"
+SET FILE_INFO=%BACKUP_FOLDER%\readme.txt
+
+:: ----------------------------------------------
+:: -   Do not change the rest of the script     -
+:: ----------------------------------------------
+echo -----------------------------------------------------------------------------
+echo - Backup script for PostgreSQL                                              -
+echo -----------------------------------------------------------------------------
+echo - SERVER: %SERVER%
+echo - DATABASE LIST: %DB_LIST%
+echo - BACKUP FOLDER: %BACKUP_FOLDER%
+echo -----------------------------------------------------------------------------
+echo Press a key to run the dump of the postgreSQL database
+pause 
+
+date /T
+time /T
+
+del %FILE_INFO%
+
+SET ORIGIN=%cd%
+cd /d %PATH_PGADMIM%
+
+:: Loop through the list of datbases and issue a pg_dump command
+
+:: pg_dump options used:
+:: 	-c = write the drop database command before creating the new one when restoring it
+:: 	-C = write the create database command and the connect statement
+::  -U = username to connect
+:: 	-w = don't ask for a password (use a config file or use pgAdmin to remember the password).
+::       This option could be removed if you don't plan to schedule an automatic execution.
+::  -h = hostname
+:: 	-Fp = plain text sql script as ouptut
+:: 	-inserts = dump data as insert statements (rather than copy), to eventualy import in other rdbms
+::  -d = to specify the database name
+:: 	-N = to exclude a schema 
+ 
+FOR %%i in (%DB_LIST%) DO (
+	echo Executing dump command for database %%i @ %SERVER%
+	
+	:: Make a copy of the previous backup in case something goes wrong
+	copy %BACKUP_FOLDER%\db_%%i.sql %BACKUP_FOLDER%\db_%%i.sql.old > nul
+	
+	:: Creating plain text for backup could be time consuming, if you have the need of something
+	:: more efficient you can use other format for the backup. For example, one my schemas is too 
+	:: big so I prefer to use a compressed format for 'sample'
+	
+	if "%%i"=="gl051" (
+		echo Excluding schema 'sample' from a simple plain text file
+		pg_dump -c -C -U postgres -w -h %SERVER% -Fp --inserts -d %%i -N sample > %BACKUP_FOLDER%\db_%%i_nosample.sql
+		echo Dumping schema 'sample' as compressed file, suitable for input into pg_restore 		
+		pg_dump -c -C -U postgres -w -h %SERVER% -Fc -d %%i -n sample -b > %BACKUP_FOLDER%\db_%%i_sample.bk
+		echo Schema sample has been compressed with option FC, provide this as input into pg_restore > %FILE_INFO%
+	) else (
+		pg_dump -c -C -U postgres -w -h %SERVER% -Fp --inserts -d %%i > %BACKUP_FOLDER%\db_%%i.sql 
+	)
+	
+	echo Done with %%i
+)
+
+:: Go back where you started 
+cd /d %ORIGIN%
+
+time /T
+
+pause 
