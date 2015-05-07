@@ -24,7 +24,6 @@ pause
 date /T
 time /T
 
-echo %FILE_INFO% 
 SET ORIGIN=%cd%
 
 cd /d %PATH_PGADMIM%
