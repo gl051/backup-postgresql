@@ -24,9 +24,9 @@ pause
 date /T
 time /T
 
-del %FILE_INFO%
-
+echo %FILE_INFO% 
 SET ORIGIN=%cd%
+
 cd /d %PATH_PGADMIM%
 
 :: Loop through the list of datbases and issue a pg_dump command
@@ -42,28 +42,22 @@ cd /d %PATH_PGADMIM%
 :: 	-inserts = dump data as insert statements (rather than copy), to eventualy import in other rdbms
 ::  -d = to specify the database name
 :: 	-N = to exclude a schema 
- 
+
 FOR %%i in (%DB_LIST%) DO (
 	echo Executing dump command for database %%i @ %SERVER%
-	
-	:: Make a copy of the previous backup in case something goes wrong
 	copy %BACKUP_FOLDER%\db_%%i.sql %BACKUP_FOLDER%\db_%%i.sql.old > nul
 	
-	:: Creating plain text for backup could be time consuming, if you have the need of something
-	:: more efficient you can use other format for the backup. For example, one my schemas is too 
-	:: big so I prefer to use a compressed format for 'sample'
-	
 	if "%%i"=="gl051" (
-		echo Excluding schema 'sample' from a simple plain text file
+		echo Excluding schema sample from the sql dump text file
 		pg_dump -c -C -U postgres -w -h %SERVER% -Fp --inserts -d %%i -N sample > %BACKUP_FOLDER%\db_%%i_nosample.sql
-		echo Dumping schema 'sample' as compressed file, suitable for input into pg_restore 		
+		echo Dumping schema sample as compressed file, suitable for input into pg_restore 		
 		pg_dump -c -C -U postgres -w -h %SERVER% -Fc -d %%i -n sample -b > %BACKUP_FOLDER%\db_%%i_sample.bk
 		echo Schema sample has been compressed with option FC, provide this as input into pg_restore > %FILE_INFO%
 	) else (
 		pg_dump -c -C -U postgres -w -h %SERVER% -Fp --inserts -d %%i > %BACKUP_FOLDER%\db_%%i.sql 
 	)
 	
-	echo Done with %%i
+	echo Done
 )
 
 :: Go back where you started 
