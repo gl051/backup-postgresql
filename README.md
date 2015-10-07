@@ -2,7 +2,7 @@
 A DOS script to run a backup of a PostgreSQL database.
 
 This batch file can be a reference for writing your own backup script. You will have to adapt it 
-depending on your needs, for example choosing by using compressed file, more efficient, or plain 
+depending on your needs, for example choosing to use compressed file, more efficient, or plain 
 text file, for a wider options of database to use when restoring the data.
 
 The code uses the pg_dump command which is part of the pgAminIII installation, you will have to tell
